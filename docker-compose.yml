@@ -1,0 +1,22 @@
+version: "3"
+services:
+  db:
+    container_name: db
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: server
+
+    ports:
+      - 5432:5432
+
+  amqp:
+    container_name: amqp
+    image: rabbitmq:management
+    restart: always
+
+    ports:
+      - 5672:5672
+      - 8080:15672
+
