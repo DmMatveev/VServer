@@ -1,43 +1,70 @@
-from enum import auto, Enum
-
 from vserver.db import WorkerDBMixin
 from vserver.rpc import rpc
+from vserver.status import *
 
 
-class Status(Enum):
-    NOT_AUTH = auto()
-    STOP = auto()
-    READY = auto()
-    WORK = auto()
-    ERROR = auto()
+# TODO можно заменить rpc.call на wraps(rpc.call, self.ip)
 
 
 class Worker(WorkerDBMixin):
-    async def get_status(self):
-        result = await rpc.call('application.status', self.ip)
+    APP_STATUS = 'app_status'
+    AUTH_STATUS = 'auth_status'
+    ACCOUNTS_STATUS = 'accounts'
 
-        self.status = {'status': result}
-
+    async def status(self):
+        result = await rpc.call(self.ip, 'application.status')
+        self.info[self.APP_STATUS] = result
         self.save()
 
+    async def auth(self):
+        if self.info[self.APP_STATUS] == WorkerStatus.NOT_AUTH:
+            arguments = {
+                'app_login': self.login,
+                'app_password': self.password
+            }
 
-    def auth(self):
-        pass
+            result = await rpc.call(self.ip, 'application.auth', arguments)
+
+            if result == AuthStatus.AUTH:
+                self.info[self.AUTH_STATUS] = AuthStatus.AUTH
+                await self.status()
+
+            elif result == AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT:
+                self.info[self.AUTH_STATUS] = AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT
+
+            elif result == AuthStatus.ERROR_SERVER_NOT_RESPONSE:
+                self.info[self.AUTH_STATUS] = AuthStatus.ERROR_SERVER_NOT_RESPONSE
+
+            elif result == AuthStatus.ERROR_ALREADY_AUTH:
+                pass#debug
+
+            self.info[self.AUTH_STATUS] = AuthStatus.ERROR
 
     def stop(self):
-        pass
+        result = await rpc.call(self.ip, 'application.stop')
+        if result == StopStatus.STOP:
+            await self.status()
+        else:
+            pass#debug
 
     def start(self):
-        pass
+        result = await rpc.call(self.ip, 'application.start')
+        if result == StartStatus.START:
+            await self.status()
+        else:
+            pass#debug
 
     def reset(self):
-        pass
+        result = await rpc.call(self.ip, 'application.reset')
+        if result == ResetStatus.RESET:
+            await self.status()
 
     def reboot(self):
         pass
 
-    def add_account(self):
-        pass
+
+    async def add_account(self):
+        result = await rpc.call(self.ip, 'account.add')
 
     def delete_account(self):
         pass

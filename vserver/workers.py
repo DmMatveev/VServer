@@ -19,7 +19,7 @@ class Workers:
 
     async def status(self):
         for worker in self.workers:
-            await asyncio.ensure_future(worker.get_status())
+            await asyncio.ensure_future(worker.status())
 
 
 workers = Workers()

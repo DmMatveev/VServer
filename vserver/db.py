@@ -14,7 +14,7 @@ class WorkerDBMixin(BaseModel):
     login = CharField()
     password = CharField()
     port = IntegerField()
-    status = BinaryJSONField()
+    info = BinaryJSONField()
 
     class Meta:
         table_name = 'worker'

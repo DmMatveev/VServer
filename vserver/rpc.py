@@ -46,13 +46,13 @@ class RPC:
         future: asyncio.Future = self.futures.pop(correlation_id, None)
 
         if future is None:
-            #log.warning("Unknown message: %r", message)
+            # log.warning("Unknown message: %r", message)
             return
 
         try:
             data = self.deserialize(message.body)
         except Exception as e:
-            #log.error("Failed to deserialize response on message: %r", message)
+            # log.error("Failed to deserialize response on message: %r", message)
             future.set_exception(e)
             return
 
@@ -77,12 +77,17 @@ class RPC:
     def serialize(self, data: Any) -> bytes:
         return pickle.dumps(data)
 
-    async def call(self, command: str, worker_name: str) -> asyncio.Future:
+    async def call(self, worker_name: str, command: str, arguments: dict = None) -> asyncio.Future:
         future = await self._create_future()
 
         properties = specification.Basic.Properties(reply_to=self.RESULT_QUEUE, correlation_id=str(id(future)))
 
-        await connection.channel.basic_publish(self.serialize(command), routing_key=worker_name, properties=properties)
+        data = {
+            'command': command,
+            'arguments': arguments
+        }
+
+        await connection.channel.basic_publish(self.serialize(data), routing_key=worker_name, properties=properties)
 
         return await future
 
