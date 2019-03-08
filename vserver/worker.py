@@ -40,21 +40,21 @@ class Worker(WorkerDBMixin):
 
             self.info[self.AUTH_STATUS] = AuthStatus.ERROR
 
-    def stop(self):
+    async def stop(self):
         result = await rpc.call(self.ip, 'application.stop')
         if result == StopStatus.STOP:
             await self.status()
         else:
             pass#debug
 
-    def start(self):
+    async def start(self):
         result = await rpc.call(self.ip, 'application.start')
         if result == StartStatus.START:
             await self.status()
         else:
             pass#debug
 
-    def reset(self):
+    async def reset(self):
         result = await rpc.call(self.ip, 'application.reset')
         if result == ResetStatus.RESET:
             await self.status()

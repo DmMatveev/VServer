@@ -2,6 +2,8 @@ import asyncio
 
 import aiormq
 import peewee
+from peewee_migrate import Router
+import redis
 
 
 class Connection:
@@ -16,6 +18,13 @@ class Connection:
             password='password',
             port=5432
         )
+
+        self.redis = redis.Redis()
+
+        #router = Router(self.db)
+        #router.create('migration12')
+        #router.run('migration12')
+        #router.run()
 
     async def init(self):
         if self.connect is not None:

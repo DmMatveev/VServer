@@ -10,8 +10,6 @@ async def init():
     await rpc.init()
     await workers.init()
 
-    d = 2
-
 
 if __name__ == '__main__':
     asyncio.run(init())

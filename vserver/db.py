@@ -1,7 +1,8 @@
 from peewee import Model, CharField, IntegerField
-from playhouse.postgres_ext import BinaryJSONField
+from playhouse.postgres_ext import BinaryJSONField, ArrayField
 
 from vserver.connection import connection
+
 
 
 class BaseModel(Model):
@@ -15,9 +16,11 @@ class WorkerDBMixin(BaseModel):
     password = CharField()
     port = IntegerField()
     info = BinaryJSONField()
+    accounts = ArrayField()
+    proxies = ArrayField()
 
     class Meta:
-        table_name = 'worker'
+        table_name = 'server.worker'
         indexes = (
             (('ip', 'port'), True),
         )
