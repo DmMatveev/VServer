@@ -89,17 +89,22 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/vserver/worker.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-397">
+            <state relative-caret-position="25">
               <caret line="23" column="13" selection-start-line="23" selection-start-column="13" selection-end-line="23" selection-end-column="13" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/.gitattributes">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/docker-compose.yml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="337">
-              <caret line="26" selection-start-line="26" selection-end-line="26" />
+            <state relative-caret-position="31">
+              <caret line="7" column="33" selection-start-line="7" selection-start-column="33" selection-end-line="7" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -108,7 +113,16 @@
         <entry file="file://$PROJECT_DIR$/vserver/connection.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="350">
-              <caret line="14" column="16" selection-start-line="14" selection-start-column="16" selection-end-line="14" selection-end-column="16" />
+              <caret line="16" column="16" selection-start-line="16" selection-start-column="16" selection-end-line="16" selection-end-column="16" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/requirments.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="200">
+              <caret line="8" selection-start-line="8" selection-end-line="8" />
             </state>
           </provider>
         </entry>
@@ -130,8 +144,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/vserver/workers.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="200">
-              <caret line="8" selection-start-line="8" selection-end-line="8" />
+            <state relative-caret-position="-90">
+              <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="5" />
             </state>
           </provider>
         </entry>
@@ -140,16 +154,7 @@
         <entry file="file://$PROJECT_DIR$/vserver/db.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="475">
-              <caret line="19" column="26" selection-start-line="19" selection-start-column="26" selection-end-line="19" selection-end-column="26" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/peewee.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="70850">
-              <caret line="2834" selection-start-line="2834" selection-end-line="2834" />
+              <caret line="22" column="33" selection-start-line="22" selection-start-column="33" selection-end-line="22" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -207,18 +212,17 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
-    <option name="x" value="-8" />
-    <option name="y" value="-8" />
-    <option name="width" value="1936" />
-    <option name="height" value="1056" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-9" />
+    <option name="y" value="-9" />
+    <option name="width" value="1937" />
+    <option name="height" value="1057" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -246,6 +250,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -372,10 +377,10 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Docker.docker-compose.yml.redis: Compose Deployment" />
         <item itemvalue="Docker.docker-compose.yml.db: Compose Deployment" />
-        <item itemvalue="Python.main" />
         <item itemvalue="Docker.docker-compose.yml: Compose Deployment" />
+        <item itemvalue="Docker.docker-compose.yml.redis: Compose Deployment" />
+        <item itemvalue="Python.main" />
         <item itemvalue="Docker.docker-compose.yml.amqp: Compose Deployment" />
       </list>
     </recent_temporary>
@@ -404,10 +409,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
+    <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4927302" visible="true" weight="0.15565032" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4927302" visible="true" weight="0.15771812" />
       <window_info id="Structure" order="1" sideWeight="0.5072698" side_tool="true" weight="0.15405117" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -417,11 +422,11 @@
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3286119" />
-      <window_info anchor="bottom" id="Docker" order="7" sideWeight="0.49946696" weight="0.4602076" />
+      <window_info anchor="bottom" id="Docker" order="7" sideWeight="0.49946696" weight="0.45892352" />
       <window_info anchor="bottom" id="Version Control" order="8" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.50053304" side_tool="true" weight="0.32936078" />
-      <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.4978678" visible="true" weight="0.30877572" />
+      <window_info anchor="bottom" id="Terminal" order="11" sideWeight="0.4978678" visible="true" weight="0.31161472" />
       <window_info anchor="bottom" id="Python Console" order="12" sideWeight="0.4989339" weight="0.32827735" />
       <window_info anchor="bottom" id="Database Console" order="13" sideWeight="0.49573562" weight="0.32827735" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -435,7 +440,6 @@
     <option name="version" value="1" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/aiormq/__init__.py" />
     <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/aiormq/auth.py" />
     <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/aio_pika/connection.py" />
     <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/pamqp/encode.py" />
@@ -499,20 +503,7 @@
     <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/table/auth_user" />
     <entry file="file://$PROJECT_DIR$/vserver/db/models.py" />
     <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/peewee_async.py" />
-    <entry file="file://$PROJECT_DIR$/requirments.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
-          <caret line="8" selection-start-line="8" selection-end-line="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/playhouse/postgres_ext.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="194">
-          <caret line="22" selection-start-line="22" selection-end-line="22" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/playhouse/postgres_ext.py" />
     <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/table/worker" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python37-32/Lib/enum.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -550,29 +541,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/vserver/migrations/001_migration_name.py" />
     <entry file="file://$PROJECT_DIR$/vserver/migrations/001_migration1.py" />
-    <entry file="file://$PROJECT_DIR$/vserver/migrations/002_migration12.py">
+    <entry file="file://$PROJECT_DIR$/vserver/migrations/002_migration12.py" />
+    <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/table/django_migrations" />
+    <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/sequence/migratehistory_id_seq" />
+    <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/table/migratehistory" />
+    <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/peewee.py" />
+    <entry file="file://$PROJECT_DIR$/vserver/migrations/001_migration12.py" />
+    <entry file="file://$PROJECT_DIR$/vserver/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-266" />
-      </provider>
-    </entry>
-    <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/table/django_migrations">
-      <provider selected="true" editor-type-id="com.intellij.database.editor.DatabaseTableFileEditorProvider">
-        <state>
-          <filtering enabled="true" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/sequence/migratehistory_id_seq">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="25">
-          <caret line="1" column="16" selection-start-line="1" selection-start-column="16" selection-end-line="1" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="das://04cac3e9-82d1-4ad6-80bf-f1a922acae82/database/server/schema/public/table/migratehistory">
-      <provider selected="true" editor-type-id="com.intellij.database.editor.DatabaseTableFileEditorProvider">
-        <state>
-          <filtering enabled="true" />
+        <state relative-caret-position="275">
+          <caret line="11" selection-start-line="11" selection-end-line="11" />
         </state>
       </provider>
     </entry>
@@ -589,56 +567,45 @@
     <entry file="file://$PROJECT_DIR$/vserver/db.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="475">
-          <caret line="19" column="26" selection-start-line="19" selection-start-column="26" selection-end-line="19" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/peewee.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="70850">
-          <caret line="2834" selection-start-line="2834" selection-end-line="2834" />
+          <caret line="22" column="33" selection-start-line="22" selection-start-column="33" selection-end-line="22" selection-end-column="33" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/docker-compose.yml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="337">
-          <caret line="26" selection-start-line="26" selection-end-line="26" />
+        <state relative-caret-position="31">
+          <caret line="7" column="33" selection-start-line="7" selection-start-column="33" selection-end-line="7" selection-end-column="33" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/vserver/connection.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="350">
-          <caret line="14" column="16" selection-start-line="14" selection-start-column="16" selection-end-line="14" selection-end-column="16" />
+          <caret line="16" column="16" selection-start-line="16" selection-start-column="16" selection-end-line="16" selection-end-column="16" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/vserver/migrations/001_migration12.py">
+    <entry file="file://$PROJECT_DIR$/requirments.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="32">
-          <caret line="24" column="19" lean-forward="true" selection-start-line="24" selection-start-column="19" selection-end-line="24" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/vserver/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="275">
-          <caret line="11" selection-start-line="11" selection-end-line="11" />
+        <state relative-caret-position="200">
+          <caret line="8" selection-start-line="8" selection-end-line="8" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/vserver/worker.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-397">
+        <state relative-caret-position="25">
           <caret line="23" column="13" selection-start-line="23" selection-start-column="13" selection-end-line="23" selection-end-column="13" />
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/.gitattributes">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/vserver/workers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
-          <caret line="8" selection-start-line="8" selection-end-line="8" />
+        <state relative-caret-position="-90">
+          <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="5" />
         </state>
       </provider>
     </entry>
