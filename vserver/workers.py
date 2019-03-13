@@ -46,8 +46,8 @@ class Workers:
         return workers
 
     async def init(self):
-        asyncio.ensure_future(self.update_workers())
-        asyncio.ensure_future(self.update_workers_status())
+        task = asyncio.ensure_future(self.update_workers())
+        task = asyncio.ensure_future(self.update_workers_status())
 
     async def update_workers(self):
         def time_passed():
@@ -71,24 +71,25 @@ class Workers:
 
             await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS)
 
-    async def update_workers_status(self):
-        def time_passed():
-            return asyncio.get_event_loop().time() - self._last_update_workers_status
-
-        while True:
-            if time_passed() > settings.INTERVAL_UPDATE_WORKERS_STATUS:
-                log.debug('start update_workers_status')
-
-                tasks = [asyncio.create_task(rpc.call(worker.ip, 'application.status')) for worker in self.workers.values()]
-                if tasks:
-                    done, pending = await asyncio.wait(tasks, timeout=30)
-
-                    for task in done:
-                        result = task.result()
-                        self.workers[result['ip']].status = result['result']
-
-                self._last_update_workers_status = asyncio.get_event_loop().time()
-
-                log.debug('end update_workers_status')
-
-            await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS_STATUS)
+    # async def update_workers_status(self):
+    #     def time_passed():
+    #         return asyncio.get_event_loop().time() - self._last_update_workers_status
+    #
+    #     while True:
+    #         if time_passed() > settings.INTERVAL_UPDATE_WORKERS_STATUS:
+    #             log.debug('start update_workers_status')
+    #
+    #             tasks = [asyncio.create_task(rpc.call(worker.ip, 'application.status')) for worker in
+    #                      self.workers.values()]
+    #             if tasks:
+    #                 done, pending = await asyncio.wait(tasks, timeout=30)
+    #
+    #                 for task in done:
+    #                     result = task.result()
+    #                     self.workers[result['ip']].status = result['result']
+    #
+    #             self._last_update_workers_status = asyncio.get_event_loop().time()
+    #
+    #             log.debug('end update_workers_status')
+    #
+    #         await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS_STATUS)

@@ -1,4 +1,7 @@
+from collections import namedtuple
 from enum import Enum, auto
+
+AuthParameters = namedtuple('AuthParameters', ['login', 'password'])
 
 
 class WorkerStatus(Enum):

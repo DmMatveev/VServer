@@ -1,33 +1,40 @@
+import logging
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Any
+
+import redis
 
 from rpc import rpc
+
 from status import *
+
+log = logging.getLogger(__name__)
 
 
 # TODO можно заменить rpc.call на wraps(rpc.call, self.ip)
 
-
-class Account:
-    def __init__(self, login: str, password: str):
-        self.login = login
-        self.password = password
-
-
-class Proxy:
-    def __init__(self, ip: str, port: int, login: str = None, password: str = None):
-        self.ip = ip
-        self.port = port
-        self.login = login
-        self.password = password
-
 @dataclass
-class Worker:
-    ip: str
+class Account:
     login: str
     password: str
-    accounts: List[Account]
-    proxies: List[Proxy]
+
+
+@dataclass
+class Proxy:
+    ip: str
+    port: int
+    login: str = ''
+    password: str = ''
+
+
+
+
+class Worker:
+    # ip: str
+    # login: str
+    # password: str
+    # accounts: List[Account]
+    # proxies: List[Proxy]
 
     def __init__(self, ip: str, login: str, password: str, accounts: List, proxies: List):
         self.ip = ip
@@ -37,7 +44,47 @@ class Worker:
         self.proxies: List[Proxy] = self.init_proxies(proxies)
         self.last_update_status = 0
 
+        '''
+            status: str,
+            data: dict,
+            count_command
+            current_command
+            
+        '''
+
         self._status: Dict = None
+
+    async def init(self):
+        status = await self.get_status()
+
+        if not (status in WorkerStatus):
+            log.error('status in WorkerStatus', status)
+            return  # Не нее
+
+        if status == WorkerStatus.STOP:
+            result = await self.call_command('application.stop')
+            if result is None:
+                return
+
+            result = await self.call_command('application.start')
+            if result is None:
+                return
+
+        if status == WorkerStatus.NOT_AUTH:
+            result = await self.call_command(
+                'application.auth',
+                AuthParameters(self.login, self.password)
+            )
+
+    async def call_command(self, command: str, arguments: Any = None):
+        return await rpc.call(self.ip, command, arguments)
+
+    async def get_status(self):
+        result = await self.call_command('application.status')
+
+        return result
+
+    def set_status(self, ):
 
     def init_accounts(self, accounts: List) -> List[Account]:
         result: List[Account] = []
@@ -60,30 +107,29 @@ class Worker:
     @status.setter
     def status(self, value):
         self._status = value
+        # redis.set(self.ip, status)
 
     async def auth(self):
-        if self.info[self.APP_STATUS] == WorkerStatus.NOT_AUTH:
-            arguments = {
-                'app_login': self.login,
-                'app_password': self.password
-            }
+        if self.status == WorkerStatus.NOT_AUTH:
+            parameters = AuthParameters(self.login, self.password)
+            result = await self.call_command('application.auth', parameters)
 
-            result = await rpc.call(self.ip, 'application.auth', arguments)
+            status = result.status
 
-            if result == AuthStatus.AUTH:
-                self.info[self.AUTH_STATUS] = AuthStatus.AUTH
-                await self.status()
+            if self._check_incoming_status(result.status, AuthStatus):
+                #уставноить что сервер не работает
 
-            elif result == AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT:
-                self.info[self.AUTH_STATUS] = AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT
+            if status == AuthStatus.AUTH:
+                pass
 
-            elif result == AuthStatus.ERROR_SERVER_NOT_RESPONSE:
-                self.info[self.AUTH_STATUS] = AuthStatus.ERROR_SERVER_NOT_RESPONSE
+            elif status == AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT:
+                pass
 
-            elif result == AuthStatus.ERROR_ALREADY_AUTH:
+            elif status == AuthStatus.ERROR_SERVER_NOT_RESPONSE:
+                pass
+
+            elif status == AuthStatus.ERROR_ALREADY_AUTH:
                 pass  # debug
-
-            self.info[self.AUTH_STATUS] = AuthStatus.ERROR
 
     async def stop(self):
         result = await rpc.call(self.ip, 'application.stop')
@@ -112,3 +158,9 @@ class Worker:
 
     def delete_account(self):
         pass
+
+    def _check_incoming_status(self, status, type_status):
+        if status in type_status:
+            return False
+
+        return True

@@ -1,14 +1,14 @@
 import asyncio
 import logging
 import pickle
-from typing import Any
+from collections import namedtuple
+from typing import Any, Type
 
 from aio_pika import RobustQueue, IncomingMessage, Message
 
 from connection import connection
 
 log = logging.getLogger(__name__)
-
 
 class RPC:
     RESULT_QUEUE = 'worker'
@@ -40,17 +40,12 @@ class RPC:
             data = self.deserialize(message.body)
         except pickle.UnpicklingError as e:
             log.error("Failed to deserialize response on message: %r", message)
-            future.set_exception(e)
+            future.set_result(None)
             return
-        #namedtuple
-        data = {
-            'result': data,
-            'ip': message.app_id
-        }
 
         future.set_result(data)
 
-    async def call(self, worker_ip: str, command: str, arguments: dict = None) -> asyncio.Future:
+    async def call(self, worker_ip: str, command: str, parameters: Type[tuple] = None) -> asyncio.Future:
         future = await self._create_future()
 
         data = {
@@ -62,7 +57,7 @@ class RPC:
 
         await connection.exchange.publish(message, routing_key=worker_ip)
 
-        return await future
+        return await future.result()#Можно ли так
 
     async def register_worker(self, worker_ip: str):
         await connection.channel.declare_queue(worker_ip, auto_delete=True)
