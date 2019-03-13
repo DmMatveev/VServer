@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import Dict, Any, NamedTuple
 
-
+df
 class CommandMessage(NamedTuple):
     command: str
     parameters: Dict[str, str] = None
