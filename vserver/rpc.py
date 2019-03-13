@@ -1,27 +1,20 @@
 import asyncio
+import logging
 import pickle
-from enum import Enum, unique
 from typing import Any
 
-from aiormq.types import DeliveredMessage
+from aio_pika import RobustQueue, IncomingMessage, Message
 
-from pamqp import specification
+from connection import connection
 
-from vserver.connection import connection
-
-
-@unique
-class RPCMessageTypes(Enum):
-    error = 'error'
-    result = 'result'
-    call = 'call'
+log = logging.getLogger(__name__)
 
 
 class RPC:
     RESULT_QUEUE = 'worker'
 
     def __init__(self):
-        self.result_queue = None
+        self.result_queue: RobustQueue = None
         self.futures = dict()
 
     async def _create_future(self) -> asyncio.Future:
@@ -31,68 +24,54 @@ class RPC:
         return future
 
     async def init(self):
-        if self.result_queue is not None:
-            return
+        self.result_queue = await connection.channel.declare_queue(self.RESULT_QUEUE, auto_delete=True)
+        await self.result_queue.consume(self.on_result_message)
 
-        self.result_queue = await connection.channel.queue_declare(self.RESULT_QUEUE, auto_delete=True)
-
-        await connection.channel.basic_consume(self.RESULT_QUEUE, self.on_result_message)
-
-    async def on_result_message(self, message: DeliveredMessage):
-        properties = message.header.properties
-
-        correlation_id = int(properties.correlation_id) if properties.correlation_id else None
+    async def on_result_message(self, message: IncomingMessage):
+        correlation_id = int(message.correlation_id) if message.correlation_id else None
 
         future: asyncio.Future = self.futures.pop(correlation_id, None)
 
         if future is None:
-            # log.warning("Unknown message: %r", message)
+            log.warning("Unknown message: %r", message)
             return
 
         try:
             data = self.deserialize(message.body)
-        except Exception as e:
-            # log.error("Failed to deserialize response on message: %r", message)
+        except pickle.UnpicklingError as e:
+            log.error("Failed to deserialize response on message: %r", message)
             future.set_exception(e)
             return
+        #namedtuple
+        data = {
+            'result': data,
+            'ip': message.app_id
+        }
 
-        if properties.message_type == RPCMessageTypes.result.value:
-            future.set_result(data)
+        future.set_result(data)
 
-        elif properties.message_type == RPCMessageTypes.error.value:
-            future.set_exception(data)
-
-        elif properties.message_type == RPCMessageTypes.call.value:
-            future.set_exception(
-                asyncio.TimeoutError("Message timed-out", message)
-            )
-        else:
-            future.set_exception(
-                RuntimeError("Unknown message type %r" % message.type)
-            )
-
-    def deserialize(self, data: bytes) -> Any:
-        return pickle.loads(data)
-
-    def serialize(self, data: Any) -> bytes:
-        return pickle.dumps(data)
-
-    async def call(self, worker_name: str, command: str, arguments: dict = None) -> asyncio.Future:
+    async def call(self, worker_ip: str, command: str, arguments: dict = None) -> asyncio.Future:
         future = await self._create_future()
-
-        properties = specification.Basic.Properties(reply_to=self.RESULT_QUEUE, correlation_id=str(id(future)))
 
         data = {
             'command': command,
             'arguments': arguments
         }
 
-        await connection.channel.basic_publish(self.serialize(data), routing_key=worker_name, properties=properties)
+        message = Message(body=self.serialize(data), reply_to=self.RESULT_QUEUE, correlation_id=id(future))
+
+        await connection.exchange.publish(message, routing_key=worker_ip)
 
         return await future
 
-    async def register_worker(self, worker_name: str):
-        await connection.channel.queue_declare(worker_name, auto_delete=True)
+    async def register_worker(self, worker_ip: str):
+        await connection.channel.declare_queue(worker_ip, auto_delete=True)
+
+    def deserialize(self, data: bytes) -> Any:
+        return pickle.loads(data)
+
+    def serialize(self, data: Any) -> bytes:
+        return pickle.dumps(data)
 
 
 rpc = RPC()

@@ -1,40 +1,30 @@
-import asyncio
+import aiohttp
+from aio_pika import RobustChannel, RobustConnection, connect_robust, RobustExchange
+from aiohttp import ClientSession
 
-import aiormq
-import peewee
-from peewee_migrate import Router
-import redis
+import settings
 
 
 class Connection:
     def __init__(self):
-        self.connect: aiormq.Connection = None
-        self.channel: aiormq.Channel = None
-
-        self.db = peewee.PostgresqlDatabase(
-            'server',
-            host='localhost',
-            user='postgres',
-            password='password',
-            port=5432
-        )
-
-        self.redis = redis.Redis()
-
-        #router = Router(self.db)
-        #router.create('migration12')
-        #router.run('migration12')
-        #router.run()
+        self.connect: RobustConnection = None
+        self.channel: RobustChannel = None
+        self.exchange: RobustExchange = None
+        self.session: ClientSession = None
 
     async def init(self):
-        if self.connect is not None:
-            await self.close()
+        self.connect = await connect_robust(
+            host=settings.RABBIT_HOST,
+            port=settings.RABBIT_PORT,
+            login=settings.RABBIT_LOGIN,
+            password=settings.RABBIT_PASSWORD
+        )
 
-        self.connect = await aiormq.connect('amqp://guest:guest@localhost/')
         self.channel = await self.connect.channel()
 
-    async def close(self):
-        await self.connect.close()
+        self.exchange = self.channel.default_exchange
+
+        self.session = aiohttp.ClientSession()
 
 
 connection: Connection = Connection()

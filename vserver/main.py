@@ -1,14 +1,11 @@
 import asyncio
 
-from vserver.connection import connection
-from vserver.rpc import rpc
-from vserver.workers import workers
+from application import Application
 
 
 async def init():
-    await connection.init()
-    await rpc.init()
-    await workers.init()
+    application = Application()
+    await application.start()
 
 
 if __name__ == '__main__':
