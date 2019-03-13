@@ -9,4 +9,4 @@ async def init():
 
 
 if __name__ == '__main__':
-    asyncio.run(init())
+    asyncio.run(init(), debug=True)
