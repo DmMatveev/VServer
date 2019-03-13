@@ -44,6 +44,8 @@ class Worker:
         self.proxies: List[Proxy] = self.init_proxies(proxies)
         self.last_update_status = 0
 
+        self.isInit = False
+
         '''
             status: str,
             data: dict,
@@ -62,9 +64,7 @@ class Worker:
             return  # Не нее
 
         if status == WorkerStatus.STOP:
-            result = await self.call_command('application.stop')
-            if result is None:
-                return
+            result = await self.stop()
 
             result = await self.call_command('application.start')
             if result is None:
@@ -84,7 +84,7 @@ class Worker:
 
         return result
 
-    def set_status(self, ):
+    def set_status(self):
 
     def init_accounts(self, accounts: List) -> List[Account]:
         result: List[Account] = []
@@ -132,11 +132,11 @@ class Worker:
                 pass  # debug
 
     async def stop(self):
-        result = await rpc.call(self.ip, 'application.stop')
+        result = await self.call_command('application.stop')
         if result == StopStatus.STOP:
-            await self.status()
+            self.set_status(WorkerStatus.STOP)
         else:
-            pass  # debug
+            log.error('')
 
     async def start(self):
         result = await rpc.call(self.ip, 'application.start')
