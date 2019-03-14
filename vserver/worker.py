@@ -41,7 +41,8 @@ class State:
 
 
 class Worker:
-    def __init__(self, id: int, ip: str, login: str, password: str, accounts: List[Dict[str, str]],
+    def __init__(self, id: int, ip: str, login: str, password: str,
+                 accounts: List[Dict[str, str]],
                  proxies: List[Dict[str, str]]):
         self.code = id
         self.ip = ip
@@ -58,7 +59,6 @@ class Worker:
         self.state = State()
 
     async def init(self):
-        print(1)
         if not self.is_work:
             self.state.worker_status = 'Инициализация'
 
@@ -72,11 +72,22 @@ class Worker:
             else:
                 return
 
+            if result.status == WorkerStatus.READY or result.status == WorkerStatus.WORK:
+                self.is_auth = True
+
         if self.is_work and not self.is_auth:
             result = await self.auth()
             if result.status == AuthStatus.AUTH:
                 await self.status()
                 self.is_auth = True
+
+    def update(self, id: int, ip: str, login: str, password: str,
+               accounts: List[Dict[str, str]],
+               proxies: List[Dict[str, str]]):
+
+        if self.login != login or self.password != password:
+            self.login = login
+            self.password = password
 
     async def status(self) -> ResultMessage:
         self.state.worker_current_command = 'Статус'

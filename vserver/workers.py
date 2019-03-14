@@ -48,10 +48,12 @@ class Workers:
                 add_worker_codes = self.get_add_worker_codes(workers)
                 self.add_workers(workers, add_worker_codes)
 
-                for worker in self.workers.values():
-                    worker.update(**)
-
                 await asyncio.gather(*[worker.init() for worker in self.workers.values()])
+
+                for worker in workers:
+                    print('update')
+                    self.workers[worker['id']].update(**worker)
+
 
             else:
                 self.delete_all_workers()
