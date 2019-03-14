@@ -12,6 +12,12 @@ class ResultMessage(NamedTuple):
     data: Dict[str, str] = None
 
 
+class AccountAddParameters(NamedTuple):
+    login: str
+    password: str
+    type: str = ''
+
+
 class WorkerStatus(Enum):
     NOT_AUTH = 'Vtope bot не авторизован'
     READY = 'Vtope bot готов к работе'

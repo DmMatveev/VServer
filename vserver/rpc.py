@@ -31,6 +31,8 @@ class RPC:
     async def on_result_message(self, message: IncomingMessage):
         correlation_id = int(message.correlation_id) if message.correlation_id else None
 
+        await message.ack()
+
         future: asyncio.Future = self.futures.pop(correlation_id, None)
 
         if future is None:

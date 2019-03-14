@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import List
 
+import commands
 from common import *
 from connection import connection
 from rpc import rpc
@@ -40,9 +41,8 @@ class State:
         raise AttributeError
 
 
-class Worker:
-    def __init__(self, id: int, ip: str, login: str, password: str,
-                 accounts: List[Dict[str, str]],
+class Worker(commands.Application):
+    def __init__(self, id: int, ip: str, login: str, password: str, accounts: List[Dict[str, str]],
                  proxies: List[Dict[str, str]]):
         self.code = id
         self.ip = ip
@@ -81,64 +81,53 @@ class Worker:
                 await self.status()
                 self.is_auth = True
 
-    def update(self, id: int, ip: str, login: str, password: str,
-               accounts: List[Dict[str, str]],
-               proxies: List[Dict[str, str]]):
+    async def update(self, id: int, ip: str, login: str, password: str, accounts: List[Dict[str, str]],
+                     proxies: List[Dict[str, str]]):
+
+        await self.status()
 
         if self.login != login or self.password != password:
             self.login = login
             self.password = password
 
-    async def status(self) -> ResultMessage:
-        self.state.worker_current_command = 'Статус'
-        self.state.worker_current_command_status = 'Выполняется'
+        #await self.delete_accounts(self.get_delete_accounts_login(accounts))
+        await self.add_accounts(accounts, self.get_add_accounts_login(accounts))
 
-        result = await self.call_command('application.status')
+    async def add_accounts(self, accounts, add_accounts_login):
+        for account in accounts:
+            if account['login'] in add_accounts_login:
+                account = Account(**account)
+                self.accounts.append(account)
 
-        self.state.worker_status = result.status.value
+                result = await self.account_add(account.login, account.password)
+                d = 2
 
-        self.state.worker_current_command = ''
-        self.state.worker_current_command_status = ''
+    def get_add_accounts_login(self, accounts):
+        return set(map(lambda x: x['login'], accounts)) - set(map(lambda x: x.login, self.accounts))
 
-        return result
+    async def account_add(self, login: str, password: str):
+        parameters = AccountAddParameters(login, password)
 
-    async def start(self) -> ResultMessage:
-        self.state.worker_current_command = 'Старт'
-        self.state.worker_current_command_status = 'Выполняется'
-
-        result = await self.call_command('application.start')
-
-        self.state.worker_current_command_status = result.status.value
-        return result
-
-    async def stop(self) -> ResultMessage:
-        self.state.worker_current_command = 'Стоп'
-        self.state.worker_current_command_status = 'Выполняется'
-
-        result = await self.call_command('application.stop')
-
-        self.state.worker_current_command_status = result.status.value
-
-        return result
-
-    async def auth(self) -> ResultMessage:
-        if self.login and self.password:
-            parameters = {
-                'login': self.login,
-                'password': self.password
-            }
-            self.state.worker_current_command = 'Авторизация'
-            self.state.worker_current_command_status = 'Выполянется'
-
-            result = await self.call_command('application.auth', parameters)
-
-            self.state.worker_current_command_status = result.status.value
-
-            return result
-
-        self.state.worker_current_command_status = AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT.value
-
-        return ResultMessage(AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT)
+        return await self.call_command('account.add', parameters)
 
     async def call_command(self, command: str, parameters: Dict[str, str] = None) -> ResultMessage:
         return await rpc.call(self.ip, command, parameters)
+
+
+
+
+
+
+
+
+
+
+
+
+    async def delete_accounts(self, delete_accounts_login):
+        for account in self.accounts:
+            if account.login in delete_accounts_login:
+                self.accounts.remove(account)
+
+    def get_delete_accounts_login(self, accounts):
+        return set(map(lambda x: x.login, self.accounts)) - set(map(lambda x: x['login'], accounts))

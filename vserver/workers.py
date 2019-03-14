@@ -51,8 +51,7 @@ class Workers:
                 await asyncio.gather(*[worker.init() for worker in self.workers.values()])
 
                 for worker in workers:
-                    print('update')
-                    self.workers[worker['id']].update(**worker)
+                    await self.workers[worker['id']].update(**worker)
 
 
             else:
