@@ -1,17 +1,13 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import List
 
-import redis
-
+from common import *
+from connection import connection
 from rpc import rpc
-
-from status import *
 
 log = logging.getLogger(__name__)
 
-
-# TODO можно заменить rpc.call на wraps(rpc.call, self.ip)
 
 @dataclass
 class Account:
@@ -27,140 +23,111 @@ class Proxy:
     password: str = ''
 
 
+class State:
+    code = None
+
+    def __init__(self):
+        self.worker_status = ''
+        self.worker_current_command = ''
+        self.worker_current_command_status = ''
+
+    def __setattr__(self, key, value):
+        if key in ['worker_status', 'worker_current_command', 'worker_current_command_status']:
+            connection.redis.hset(self.code, key, value)
+            connection.redis.expire(self.code, 60)
+            return
+
+        raise AttributeError
 
 
 class Worker:
-    # ip: str
-    # login: str
-    # password: str
-    # accounts: List[Account]
-    # proxies: List[Proxy]
-
-    def __init__(self, ip: str, login: str, password: str, accounts: List, proxies: List):
+    def __init__(self, id: int, ip: str, login: str, password: str, accounts: List[Dict[str, str]],
+                 proxies: List[Dict[str, str]]):
+        self.code = id
         self.ip = ip
         self.login = login
         self.password = password
-        self.accounts: List[Account] = self.init_accounts(accounts)
-        self.proxies: List[Proxy] = self.init_proxies(proxies)
+        self.accounts: List[Account] = [Account(**account) for account in accounts]
+        self.proxies: List[Proxy] = [Proxy(**proxy) for proxy in proxies]
+
         self.last_update_status = 0
 
-        '''
-            status: str,
-            data: dict,
-            count_command
-            current_command
-            
-        '''
-
-        self._status: Dict = None
+        self.is_work = False
+        self.is_auth = False
+        State.code = self.code
+        self.state = State()
 
     async def init(self):
-        status = await self.get_status()
+        print(1)
+        if not self.is_work:
+            self.state.worker_status = 'Инициализация'
 
-        if not (status in WorkerStatus):
-            log.error('status in WorkerStatus', status)
-            return  # Не нее
+            await self.stop()
+            await self.start()
 
-        if status == WorkerStatus.STOP:
-            result = await self.call_command('application.stop')
-            if result is None:
+            result = await self.status()
+
+            if result.status != WorkerStatus.STOP:
+                self.is_work = True
+            else:
                 return
 
-            result = await self.call_command('application.start')
-            if result is None:
-                return
+        if self.is_work and not self.is_auth:
+            result = await self.auth()
+            if result.status == AuthStatus.AUTH:
+                await self.status()
+                self.is_auth = True
 
-        if status == WorkerStatus.NOT_AUTH:
-            result = await self.call_command(
-                'application.auth',
-                AuthParameters(self.login, self.password)
-            )
+    async def status(self) -> ResultMessage:
+        self.state.worker_current_command = 'Статус'
+        self.state.worker_current_command_status = 'Выполняется'
 
-    async def call_command(self, command: str, arguments: Any = None):
-        return await rpc.call(self.ip, command, arguments)
-
-    async def get_status(self):
         result = await self.call_command('application.status')
 
-        return result
+        self.state.worker_status = result.status.value
 
-    def set_status(self, ):
-
-    def init_accounts(self, accounts: List) -> List[Account]:
-        result: List[Account] = []
-        for account in accounts:
-            result.append(Account(account['login'], account['password']))
+        self.state.worker_current_command = ''
+        self.state.worker_current_command_status = ''
 
         return result
 
-    def init_proxies(self, proxies: List) -> List[Proxy]:
-        result: List[Proxy] = []
-        for proxy in proxies:
-            result.append(Proxy(proxy['login'], proxy['port'], proxy['login'], proxy['password']))
+    async def start(self) -> ResultMessage:
+        self.state.worker_current_command = 'Старт'
+        self.state.worker_current_command_status = 'Выполняется'
+
+        result = await self.call_command('application.start')
+
+        self.state.worker_current_command_status = result.status.value
+        return result
+
+    async def stop(self) -> ResultMessage:
+        self.state.worker_current_command = 'Стоп'
+        self.state.worker_current_command_status = 'Выполняется'
+
+        result = await self.call_command('application.stop')
+
+        self.state.worker_current_command_status = result.status.value
 
         return result
 
-    @property
-    def status(self):
-        return self.status
+    async def auth(self) -> ResultMessage:
+        if self.login and self.password:
+            parameters = {
+                'login': self.login,
+                'password': self.password
+            }
+            self.state.worker_current_command = 'Авторизация'
+            self.state.worker_current_command_status = 'Выполянется'
 
-    @status.setter
-    def status(self, value):
-        self._status = value
-        # redis.set(self.ip, status)
-
-    async def auth(self):
-        if self.status == WorkerStatus.NOT_AUTH:
-            parameters = AuthParameters(self.login, self.password)
             result = await self.call_command('application.auth', parameters)
 
-            status = result.status
+            self.state.worker_current_command_status = result.status.value
 
-            if self._check_incoming_status(result.status, AuthStatus):
-                #уставноить что сервер не работает
+            return result
 
-            if status == AuthStatus.AUTH:
-                pass
+        self.state.worker_current_command_status = AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT.value
 
-            elif status == AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT:
-                pass
+        return ResultMessage(AuthStatus.ERROR_LOGIN_OR_PASSWORD_INCORRECT)
 
-            elif status == AuthStatus.ERROR_SERVER_NOT_RESPONSE:
-                pass
-
-            elif status == AuthStatus.ERROR_ALREADY_AUTH:
-                pass  # debug
-
-    async def stop(self):
-        result = await rpc.call(self.ip, 'application.stop')
-        if result == StopStatus.STOP:
-            await self.status()
-        else:
-            pass  # debug
-
-    async def start(self):
-        result = await rpc.call(self.ip, 'application.start')
-        if result == StartStatus.START:
-            await self.status()
-        else:
-            pass  # debug
-
-    async def reset(self):
-        result = await rpc.call(self.ip, 'application.reset')
-        if result == ResetStatus.RESET:
-            await self.status()
-
-    def reboot(self):
-        pass
-
-    async def add_account(self):
-        result = await rpc.call(self.ip, 'account.add')
-
-    def delete_account(self):
-        pass
-
-    def _check_incoming_status(self, status, type_status):
-        if status in type_status:
-            return False
-
-        return True
+    async def call_command(self, command: str, parameters: Dict[str, str] = None) -> ResultMessage:
+        return await rpc.call(self.ip, command, parameters)

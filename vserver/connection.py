@@ -1,8 +1,10 @@
 import aiohttp
 from aio_pika import RobustChannel, RobustConnection, connect_robust, RobustExchange
 from aiohttp import ClientSession
+from redis import Redis
 
 import settings
+import redis
 
 
 class Connection:
@@ -11,6 +13,7 @@ class Connection:
         self.channel: RobustChannel = None
         self.exchange: RobustExchange = None
         self.session: ClientSession = None
+        self.redis: Redis = redis.StrictRedis(settings.REDIS_IP)
 
     async def init(self):
         self.connect = await connect_robust(

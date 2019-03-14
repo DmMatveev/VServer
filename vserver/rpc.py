@@ -2,10 +2,11 @@ import asyncio
 import logging
 import pickle
 from collections import namedtuple
-from typing import Any, Type
+from typing import Any, Type, Dict
 
 from aio_pika import RobustQueue, IncomingMessage, Message
 
+from common import CommandMessage, ResultMessage
 from connection import connection
 
 log = logging.getLogger(__name__)
@@ -37,27 +38,27 @@ class RPC:
             return
 
         try:
-            data = self.deserialize(message.body)
+            result: ResultMessage = self.deserialize(message.body)
         except pickle.UnpicklingError as e:
             log.error("Failed to deserialize response on message: %r", message)
             future.set_result(None)
             return
 
-        future.set_result(data)
+        if isinstance(result, ResultMessage):
+            future.set_result(result)
+        else:
+            log.error('Invalid messafe')
 
-    async def call(self, worker_ip: str, command: str, parameters: Type[tuple] = None) -> asyncio.Future:
+    async def call(self, worker_ip: str, command: str, parameters: Dict[str, str] = None) -> asyncio.Future:
         future = await self._create_future()
 
-        data = {
-            'command': command,
-            'arguments': arguments
-        }
+        message = CommandMessage(command, parameters)
 
-        message = Message(body=self.serialize(data), reply_to=self.RESULT_QUEUE, correlation_id=id(future))
+        message = Message(body=self.serialize(message), reply_to=self.RESULT_QUEUE, correlation_id=id(future))
 
         await connection.exchange.publish(message, routing_key=worker_ip)
 
-        return await future.result()#Можно ли так
+        return await future
 
     async def register_worker(self, worker_ip: str):
         await connection.channel.declare_queue(worker_ip, auto_delete=True)

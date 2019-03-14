@@ -6,7 +6,6 @@ import aiohttp
 
 import settings
 from connection import connection
-from rpc import rpc
 from worker import Worker
 
 log = logging.getLogger(__name__)
@@ -15,57 +14,67 @@ log = logging.getLogger(__name__)
 class Workers:
     def __init__(self):
         self.workers: Dict[str, Worker] = {}
-        self._last_update_workers_status: float = 0
         self._last_update_workers: float = 0
 
-    def delete_workers(self):
-        for worker in self.workers:
-            del worker
+    async def init(self):
+        await asyncio.ensure_future(self.update_workers())
+
+    def delete_workers(self, worker_codes):
+        for worker_code in worker_codes:
+            del self.workers[worker_code]
+
+    def add_workers(self, workers, worker_codes):
+        for worker_code in worker_codes:
+            for worker in workers:
+                if worker['id'] == worker_code:
+                    self.workers[worker_code] = Worker(**worker)
+                    break
+
+    def get_add_worker_codes(self, workers):
+        return set([int(worker['id']) for worker in workers]) - set(self.workers.keys())
+
+    def get_delete_worker_codes(self, workers):
+        return set(self.workers.keys()) - set([int(worker['id']) for worker in workers])
+
+    async def update_workers(self):
+        while True:
+            log.debug('start update_workers')
+
+            workers = await self.get_workers()
+            if workers:
+                delete_worker_codes = self.get_delete_worker_codes(workers)
+                self.delete_workers(delete_worker_codes)
+
+                add_worker_codes = self.get_add_worker_codes(workers)
+                self.add_workers(workers, add_worker_codes)
+
+                for worker in self.workers.values():
+                    worker.update(**)
+
+                await asyncio.gather(*[worker.init() for worker in self.workers.values()])
+
+            else:
+                self.delete_all_workers()
+
+            log.debug('end update_workers')
+
+            await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS)
 
     async def get_workers(self):
         workers: Dict[int, Worker] = {}
 
         try:
             async with connection.session.get(f'http://{settings.REST_IP}:{settings.REST_PORT}/workers/') as response:
-                for worker in await response.json():
-                    workers[worker['ip']] = Worker(
-                        worker['ip'],
-                        worker['login'],
-                        worker['password'],
-                        worker['accounts'],
-                        worker['proxies'])
-
-                return workers
+                return await response.json()
 
         except aiohttp.ClientConnectorError:
-            log.warning('ClientConnectorError')
+            log.error('ClientConnectorError')
 
         except Exception:
             log.exception('Error')
 
-        return workers
+        return None
 
-    async def init(self):
-        task = asyncio.ensure_future(self.update_workers())
-
-    async def update_workers(self):
-        def time_passed():
-            return asyncio.get_event_loop().time() - self._last_update_workers
-
-        while True:
-            if time_passed() > settings.INTERVAL_UPDATE_WORKERS:
-                log.debug('start update_workers')
-
-                workers = await self.get_workers()
-                if workers:
-                    difference = set(workers.keys() ^ self.workers.keys())
-                    if difference:
-                        self.workers = workers
-                else:
-                    self.delete_workers()
-
-                self._last_update_workers_status = asyncio.get_event_loop().time()
-
-                log.debug('end update_workers')
-
-            await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS)
+    def delete_all_workers(self):
+        for worker in self.workers:
+            del worker
