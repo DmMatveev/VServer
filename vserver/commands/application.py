@@ -1,4 +1,7 @@
-from common import ResultMessage, AuthStatus
+from symbol import parameters
+
+from common.account import AccountAddParameters
+from common.common import ResultMessage, AuthStatus, ApplicationAuthParameters
 
 
 class Application:
@@ -37,14 +40,10 @@ class Application:
 
     async def auth(self) -> ResultMessage:
         if self.login and self.password:
-            parameters = {
-                'login': self.login,
-                'password': self.password
-            }
             self.state.worker_current_command = 'Авторизация'
             self.state.worker_current_command_status = 'Выполянется'
 
-            result = await self.call_command('application.auth', parameters)
+            result = await self.call_command('application.auth', ApplicationAuthParameters(self.login, self.password))
 
             self.state.worker_current_command_status = result.status.value
 

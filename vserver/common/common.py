@@ -1,21 +1,21 @@
 from enum import Enum, auto
-from typing import Dict, Any, NamedTuple
+from typing import NamedTuple
 
 
 class CommandMessage(NamedTuple):
     command: str
-    parameters: Dict[str, str] = None
+    parameters: NamedTuple = None
 
 
 class ResultMessage(NamedTuple):
-    status: Any
-    data: Dict[str, str] = None
+    status: Enum
+    data: Enum = None
 
 
-class AccountAddParameters(NamedTuple):
+class ApplicationAuthParameters(NamedTuple):
     login: str
     password: str
-    type: str = ''
+
 
 
 class WorkerStatus(Enum):
@@ -48,3 +48,5 @@ class ResetStatus(Enum):
     ERROR_APP_START = auto()
     ERROR = auto()
     RESET = auto()
+
+

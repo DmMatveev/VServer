@@ -41,6 +41,9 @@ class Workers:
             log.debug('start update_workers')
 
             workers = await self.get_workers()
+            if workers is None:
+                log.error('Нет ни одного воркера')
+
             if workers:
                 delete_worker_codes = self.get_delete_worker_codes(workers)
                 self.delete_workers(delete_worker_codes)
@@ -50,20 +53,14 @@ class Workers:
 
                 await asyncio.gather(*[worker.init() for worker in self.workers.values()])
 
-                for worker in workers:
-                    await self.workers[worker['id']].update(**worker)
-
-
-            else:
-                self.delete_all_workers()
+                #for worker in workers:
+                #    await self.workers[worker['id']].update(**worker)
 
             log.debug('end update_workers')
 
             await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS)
 
     async def get_workers(self):
-        workers: Dict[int, Worker] = {}
-
         try:
             async with connection.session.get(f'http://{settings.REST_IP}:{settings.REST_PORT}/workers/') as response:
                 return await response.json()

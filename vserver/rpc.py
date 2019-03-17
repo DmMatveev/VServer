@@ -1,15 +1,15 @@
 import asyncio
 import logging
 import pickle
-from collections import namedtuple
-from typing import Any, Type, Dict
+from typing import Any, NamedTuple
 
 from aio_pika import RobustQueue, IncomingMessage, Message
 
-from common import CommandMessage, ResultMessage
+from common.common import CommandMessage, ResultMessage
 from connection import connection
 
 log = logging.getLogger(__name__)
+
 
 class RPC:
     RESULT_QUEUE = 'worker'
@@ -51,7 +51,7 @@ class RPC:
         else:
             log.error('Invalid messafe')
 
-    async def call(self, worker_ip: str, command: str, parameters: Dict[str, str] = None) -> asyncio.Future:
+    async def call(self, worker_ip: str, command: str, parameters: NamedTuple = None) -> asyncio.Future:
         future = await self._create_future()
 
         message = CommandMessage(command, parameters)

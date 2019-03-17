@@ -1,9 +1,11 @@
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict, NamedTuple
 
 import commands
-from common import *
+from common.account import AccountAddParameters, AccountType
+from common.common import ResultMessage, WorkerStatus, AuthStatus
+from common.proxy import ProxyAddParameters, ProxyType, ProxyAddStatus
 from connection import connection
 from rpc import rpc
 
@@ -55,6 +57,8 @@ class Worker(commands.Application):
 
         self.is_work = False
         self.is_auth = False
+        self.is_add = False
+
         State.code = self.code
         self.state = State()
 
@@ -62,7 +66,6 @@ class Worker(commands.Application):
         if not self.is_work:
             self.state.worker_status = 'Инициализация'
 
-            await self.stop()
             await self.start()
 
             result = await self.status()
@@ -81,17 +84,30 @@ class Worker(commands.Application):
                 await self.status()
                 self.is_auth = True
 
-    async def update(self, id: int, ip: str, login: str, password: str, accounts: List[Dict[str, str]],
-                     proxies: List[Dict[str, str]]):
+        if not self.is_add:
+            # for proxy in self.proxies:
+            #     result = await self.call_command('proxy.add',
+            #                                      ProxyAddParameters(proxy.ip,
+            #                                                         proxy.port,
+            #                                                         ProxyType.HTTPS,
+            #                                                         proxy.login,
+            #                                                         proxy.password))
+            #
+            #     if result.status != ProxyAddStatus.ADD:
+            #         print('Прокси не добавилось')
+            #         return
 
-        await self.status()
+            proxies = self.proxies * 2
+            for proxy, account in enumerate(self.accounts):
+                result = await self.call_command('account.add',
+                                                 AccountAddParameters(
+                                                     account.login,
+                                                     account.password,
+                                                     AccountType.INSTAGRAM,
+                                                     proxies[proxy].ip
+                                                 ))
 
-        if self.login != login or self.password != password:
-            self.login = login
-            self.password = password
 
-        #await self.delete_accounts(self.get_delete_accounts_login(accounts))
-        await self.add_accounts(accounts, self.get_add_accounts_login(accounts))
 
     async def add_accounts(self, accounts, add_accounts_login):
         for account in accounts:
@@ -100,29 +116,28 @@ class Worker(commands.Application):
                 self.accounts.append(account)
 
                 result = await self.account_add(account.login, account.password)
-                d = 2
 
     def get_add_accounts_login(self, accounts):
         return set(map(lambda x: x['login'], accounts)) - set(map(lambda x: x.login, self.accounts))
 
     async def account_add(self, login: str, password: str):
-        parameters = AccountAddParameters(login, password)
+        parameters = AccountAddParameters(login, password, AccountType.INSTAGRAM)
 
         return await self.call_command('account.add', parameters)
 
-    async def call_command(self, command: str, parameters: Dict[str, str] = None) -> ResultMessage:
+    async def call_command(self, command: str, parameters: NamedTuple = None) -> ResultMessage:
         return await rpc.call(self.ip, command, parameters)
 
+    async def update(self, id: int, ip: str, login: str, password: str, accounts: List[Dict[str, str]],
+                     proxies: List[Dict[str, str]]):
+        await self.status()
 
+        if self.login != login or self.password != password:
+            self.login = login
+            self.password = password
 
-
-
-
-
-
-
-
-
+        # await self.delete_accounts(self.get_delete_accounts_login(accounts))
+        await self.add_accounts(accounts, self.get_add_accounts_login(accounts))
 
     async def delete_accounts(self, delete_accounts_login):
         for account in self.accounts:
