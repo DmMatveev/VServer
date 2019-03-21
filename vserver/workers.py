@@ -13,66 +13,53 @@ log = logging.getLogger(__name__)
 
 class Workers:
     def __init__(self):
-        self.workers: Dict[str, Worker] = {}
-        self._last_update_workers: float = 0
+        self.workers: Dict[str, Worker] = []
 
     async def init(self):
-        await asyncio.ensure_future(self.update_workers())
-
-    def delete_workers(self, worker_codes):
-        for worker_code in worker_codes:
-            del self.workers[worker_code]
-
-    def add_workers(self, workers, worker_codes):
-        for worker_code in worker_codes:
-            for worker in workers:
-                if worker['id'] == worker_code:
-                    self.workers[worker_code] = Worker(**worker)
-                    break
-
-    def get_add_worker_codes(self, workers):
-        return set([int(worker['id']) for worker in workers]) - set(self.workers.keys())
-
-    def get_delete_worker_codes(self, workers):
-        return set(self.workers.keys()) - set([int(worker['id']) for worker in workers])
+        await asyncio.create_task(self.update_workers())
 
     async def update_workers(self):
         while True:
-            log.debug('start update_workers')
-
             workers = await self.get_workers()
-            if workers is None:
-                log.error('Нет ни одного воркера')
-
             if workers:
-                delete_worker_codes = self.get_delete_worker_codes(workers)
-                self.delete_workers(delete_worker_codes)
+                try:
+                    workers_remove = set(self.workers.keys()) - set(workers.keys())
+                    if workers_remove:
+                        log.info('Delete workers %s', workers_remove)
+                        pass
 
-                add_worker_codes = self.get_add_worker_codes(workers)
-                self.add_workers(workers, add_worker_codes)
+                    workers_add = set(workers.keys()) - set(self.workers.keys())
+                    if workers_add:
+                        for worker in workers_add:
+                            log.info('Add worker %s', worker)
+                            self.workers[worker] = Worker(workers[worker].pop('code'), workers[worker]['name'])
 
-                await asyncio.gather(*[worker.init() for worker in self.workers.values()])
+                    log.debug('Update workers %s', self.workers.keys())
 
-                #for worker in workers:
-                #    await self.workers[worker['id']].update(**worker)
+                    tasks = []
+                    for worker_name, worker in self.workers.items():
+                        tasks.append(worker.update(**workers[worker_name]))
 
-            log.debug('end update_workers')
+                    await asyncio.gather(*tasks, return_exceptions=True)
+
+                except AttributeError:
+                    continue
 
             await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS)
 
-    async def get_workers(self):
+    async def get_workers(self) -> Dict[str, Dict]:
+        workers = []
+
         try:
             async with connection.session.get(f'http://{settings.REST_IP}:{settings.REST_PORT}/workers/') as response:
-                return await response.json()
+                workers = await response.json()
 
         except aiohttp.ClientConnectorError:
-            log.error('ClientConnectorError')
+            log.exception('aiohttp.ClientConnectorError')
 
+        # TODO В будущем сузить круг исключений. Проверить на не json формат
         except Exception:
-            log.exception('Error')
+            log.exception('aiohttp.Exception')
 
-        return None
-
-    def delete_all_workers(self):
-        for worker in self.workers:
-            del worker
+        finally:
+            return workers

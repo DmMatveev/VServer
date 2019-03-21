@@ -1,5 +1,0 @@
-version: "3"
-services:
-  server1:
-    container_name: server1
-    image: mcr.microsoft.com/windows/servercore

@@ -5,7 +5,7 @@ from application import Application
 
 async def init():
     application = Application()
-    await application.start()
+    await application.init()
 
 
 if __name__ == '__main__':

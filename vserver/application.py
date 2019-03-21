@@ -10,8 +10,4 @@ class Application:
     async def init(self):
         await connection.init()
         await rpc.init()
-
         await self.workers.init()
-
-    async def start(self):
-        await self.init()
