@@ -47,7 +47,8 @@ class Workers:
 
             await asyncio.sleep(settings.INTERVAL_UPDATE_WORKERS)
 
-    async def get_workers(self) -> Dict[str, Dict]:
+    @staticmethod
+    async def get_workers() -> Dict[str, Dict]:
         workers = []
 
         try:

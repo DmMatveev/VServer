@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import NamedTuple
+from typing import NamedTuple, List
 
 
 class CommandMessage(NamedTuple):
@@ -10,8 +10,9 @@ class CommandMessage(NamedTuple):
 class CommandStatus(Enum):
     SUCCESS = auto()
     ERROR = auto()
+    INVALID = auto()
 
 
 class ResultMessage(NamedTuple):
     status: CommandStatus
-    data: Enum = None
+    data: List[Enum] = None
