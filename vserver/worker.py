@@ -1,12 +1,12 @@
 import asyncio
 import logging
-from dataclasses import dataclass, asdict
-from typing import Dict, NamedTuple, NewType
+from dataclasses import dataclass
+from typing import Dict, NamedTuple
 
 from common.account import AccountStatus, AccountType, AccountAddParameters
 from common.application import ApplicationStatus, ApplicationAuthParameters
 from common.common import ResultMessage, CommandStatus
-from common.proxy import ProxyStatus, ProxyType, ProxyAddParameters, ProxyInfo, ProxyDeleteParameters
+from common.proxy import ProxyStatus, ProxyType, ProxyAddParameters, ProxyDeleteParameters
 from rpc import rpc
 
 log = logging.getLogger(__name__)
@@ -31,33 +31,24 @@ class Account:
     proxy: str = ''
 
 
-Accounts = NewType('Accounts', Dict[str, Account])
-Proxies = NewType('Proxies', Dict[str, Proxy])
-
-
 class Worker:
-    def __init__(self, code: int, name: str):
-        self.code: int = code
+    def __init__(self, ip: str, login: str, password: str, name: str, **kwargs):
         self.name: str = name
-        self.login: str = None
-        self.password: str = None
-        self.accounts: Accounts = []
-        self.proxies: Proxies = []
+        self.ip: str = ip
+        self.login: str = login
+        self.password: str = password
+        self.accounts: Dict[str, Account] = {}
+        self.proxies: Dict[str, Proxy] = {}
 
         self.status: ApplicationStatus = None
 
         self.count_errors = 0
 
     async def update(self,
-                     name: str,
                      login: str,
                      password: str,
                      accounts: Dict[str, Dict],
-                     proxies: Dict[str, Dict]):
-
-        if name != self.name:
-            await self.call_command('application.update')
-            return
+                     proxies: Dict[str, Dict], **kwargs):
 
         await self.update_status()
 
@@ -81,80 +72,88 @@ class Worker:
                 # выйти из аккаунта
                 return
 
-            proxies_add = set(proxies.keys()) - set(self.proxies.keys())
-            if proxies_add:
-                for proxy in proxies_add:
-                    proxy = proxies[proxy]
-                    proxy['port'] = int(proxy['port'])
-                    proxy = Proxy(**proxy)
-                    self.proxies[proxy.ip] = proxy
+            diff = set(map(lambda x: x['ip'], proxies)) - set(self.proxies.keys())
 
-            accounts_add = set(accounts.keys()) - set(self.accounts.keys())
-            if accounts_add:
-                for account in accounts_add:
-                    account = accounts[account]
-                    account = Account(**account)
-                    self.accounts[account.login] = account
+            for d in diff:
+                for proxy in proxies:
+                    if d == proxy['ip']:
+                        self.proxies[proxy['ip']] = Proxy(**proxy)
+                        break
 
-            result = await self.call_command('proxy.list')
-            if result.status == CommandStatus.SUCCESS:
-                proxies_add = set(self.proxies.keys()) - set(map(lambda x: x.ip, result.data))
-                if proxies_add:
-                    for proxy_ip in proxies_add:
-                        proxy = self.proxies[proxy_ip]
-                        parameters = ProxyAddParameters(proxy.ip,
-                                                        proxy.port,
-                                                        proxy.type,
-                                                        proxy.login,
-                                                        proxy.password)
-                        await self.call_command('proxy.add', parameters)
+            diff = set(map(lambda x: x['account_login'], accounts)) - set(self.accounts.keys())
 
-                for proxy in result.data:
-                    self.proxies[proxy.ip].status = proxy.status
+            for i in range(len(proxies)):
+                accounts[i]['proxy'] = proxies[i]['ip']
 
-                for proxy in self.proxies.values():
-                    if proxy.status == ProxyStatus.badstate or proxy.status == ProxyStatus.badproxy:
-                        await self.call_command('proxy.delete', ProxyDeleteParameters(proxy.ip))
+            for d in diff:
+                for account in accounts:
+                    if d == account['account_login']:
+                        login = account['account_login']
+                        password = account['account_password']
+                        proxy = account['proxy']
 
-            else:
-                log.error(f'VBot(%s) command proxy.list has error', self.name)
-                return
+                        self.accounts[login] = Account(login, password, proxy=proxy)
 
-            result = await self.call_command('account.list')
-            if result.status == CommandStatus.SUCCESS:
-                accounts_add = set(self.accounts.keys()) - set(map(lambda x: x.login, result.data))
-                if accounts_add:
-                    for account_login in accounts_add:
-                        account = self.accounts[account_login]
-                        proxy_status = self.proxies[account.proxy].status
-                        if proxy_status == ProxyStatus.queued or proxy_status == ProxyStatus.working:
-                            parameters = AccountAddParameters(account.login,
-                                                              account.password,
-                                                              AccountType.INSTAGRAM,
-                                                              account.proxy)
-                            await self.call_command('account.add', parameters)
+            accounts = (await self.call_command('account.list')).data
+            proxies = (await self.call_command('proxy.list')).data
 
-                for account in result.data:
-                    self.accounts[account.login].status = account.status
+            for proxy in proxies:
+                self.proxies[proxy.ip].status = proxy.status
 
-            else:
-                log.error(f'VBot(%s) command account.list has error', self.name)
-                return
+            for proxy in self.proxies.values():
+                proxy_status = proxy.status
+                if proxy_status in (ProxyStatus.queued, ProxyStatus.working, ProxyStatus.validating, None):
+                    continue
+                else:
+                    await self.call_command('proxy.delete', ProxyDeleteParameters(proxy.ip))
+                    del self.proxies[proxy['ip']]
+
+            diff = set(self.proxies.keys()) - set(map(lambda x: x.ip, proxies))
+
+            for d in diff:
+                proxy = self.proxies[d]
+                await self.call_command('proxy.add',
+                                        ProxyAddParameters(
+                                            proxy.ip,
+                                            proxy.port,
+                                            proxy.type,
+                                            proxy.login,
+                                            proxy.password
+                                        ))
+
+            diff = set(self.accounts.keys()) - set(map(lambda x: x.login, accounts))
+
+            for d in diff:
+                account = self.accounts[d]
+                proxy_status = self.proxies[account.proxy].status
+                if proxy_status == ProxyStatus.queued or proxy_status == ProxyStatus.working:
+                    await self.call_command('account.add',
+                                            AccountAddParameters(
+                                                account.login,
+                                                account.password,
+                                                AccountType.INSTAGRAM,
+                                                account.proxy
+                                            ))
 
     async def update_status(self):
-        result = await self.call_command('application.status', timeout=90)
+        result = await self.call_command('application.status')
         if result.status == CommandStatus.SUCCESS:
             self.status = result.data
 
         elif result.status == CommandStatus.ERROR:
             raise RuntimeError(f'VBot({self.name}) command application.status has error')
 
-    async def call_command(self, command: str, parameters: NamedTuple = None, timeout: int = 180) -> ResultMessage:
+    async def call_command(self, command: str, parameters: NamedTuple = None, timeout: int = 30) -> ResultMessage:
         log.info('Worker(%s) send command: %s', self.name, command)
 
         try:
-            return await asyncio.wait_for(rpc.call(self.name, command, parameters), timeout=timeout)
+            result = await asyncio.wait_for(rpc.call(self.ip, command, parameters), timeout=timeout)
+
+            log.info('Worker(%s) recieved result command: %s', self.name, result.status)
+
+            return result
+
         except asyncio.TimeoutError:
             self.status = ApplicationStatus.CLIENT_NOT_RESPONSE
-            log.error('VBot(%s) not response', self.name)
+            log.error('VBot(%s) not response', self.ip)
             raise RuntimeError
