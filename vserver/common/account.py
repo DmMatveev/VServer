@@ -12,8 +12,9 @@ class AccountStatus(Enum):
     validating = 'Валидация'
     manual = 'Ручная авторизация'
     working = 'В работе'
-    sleep = 'Спит'
+    sleeping = 'Спит'
     badproxy = 'Прокси не работает'
+    waitproxy = 'Ожидает прокси'
 
 
 class AccountInfo(NamedTuple):

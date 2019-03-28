@@ -50,6 +50,8 @@ class Worker:
                      accounts: Dict[str, Dict],
                      proxies: Dict[str, Dict], **kwargs):
 
+        #await self.call_command('application.stop')
+        #await self.call_command('application.reset')
         await self.update_status()
 
         if self.status == ApplicationStatus.STOP:
@@ -100,16 +102,21 @@ class Worker:
             for proxy in proxies:
                 self.proxies[proxy.ip].status = proxy.status
 
+            delete_proxy = []
             for proxy in self.proxies.values():
                 proxy_status = proxy.status
                 if proxy_status in (ProxyStatus.queued, ProxyStatus.working, ProxyStatus.validating, None):
                     continue
                 else:
                     await self.call_command('proxy.delete', ProxyDeleteParameters(proxy.ip))
-                    del self.proxies[proxy['ip']]
+                    delete_proxy.append(proxy.ip)
+
+            for proxy in delete_proxy:
+                self.proxies.pop(proxy)
 
             diff = set(self.proxies.keys()) - set(map(lambda x: x.ip, proxies))
 
+            i = 0
             for d in diff:
                 proxy = self.proxies[d]
                 await self.call_command('proxy.add',
@@ -120,9 +127,13 @@ class Worker:
                                             proxy.login,
                                             proxy.password
                                         ))
+                if i == 5:
+                    break
+                i += 1
 
             diff = set(self.accounts.keys()) - set(map(lambda x: x.login, accounts))
 
+            i = 0
             for d in diff:
                 account = self.accounts[d]
                 proxy_status = self.proxies[account.proxy].status
@@ -135,6 +146,10 @@ class Worker:
                                                 account.proxy
                                             ))
 
+                if i == 5:
+                    break
+                i += 1
+
     async def update_status(self):
         result = await self.call_command('application.status')
         if result.status == CommandStatus.SUCCESS:
@@ -143,7 +158,7 @@ class Worker:
         elif result.status == CommandStatus.ERROR:
             raise RuntimeError(f'VBot({self.name}) command application.status has error')
 
-    async def call_command(self, command: str, parameters: NamedTuple = None, timeout: int = 30) -> ResultMessage:
+    async def call_command(self, command: str, parameters: NamedTuple = None, timeout: int = 60) -> ResultMessage:
         log.info('Worker(%s) send command: %s', self.name, command)
 
         try:

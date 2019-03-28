@@ -13,7 +13,7 @@ class ProxyStatus(Enum):
     validating = 'Валидация'
     queued = 'В очереди на работу'
     working = 'В работе'
-    #badproxy = 'Нерабочий прокси'
+    tooslow = 'Прокси очень медленный'
 
 
 class ProxyInfo(NamedTuple):
