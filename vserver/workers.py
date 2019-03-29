@@ -33,7 +33,7 @@ class Workers:
                     if workers_add:
                         for worker in workers_add:
                             log.info('Add worker %s', worker)
-                            self.workers[worker] = Worker(**workers[worker])
+                            self.workers[worker] = Worker(workers[worker].pop('id') ,**workers[worker])
 
                     log.debug('Update workers %s', self.workers.keys())
 
@@ -59,7 +59,7 @@ class Workers:
                     try:
                         worker = json.pop(0)
 
-                        #if worker['ip'] != '185.244.218.231':
+                        #if worker['ip'] != '178.159.42.36':
                         #    continue
 
                         workers[worker['ip']] = worker

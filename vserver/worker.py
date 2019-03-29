@@ -7,6 +7,7 @@ from common.account import AccountStatus, AccountType, AccountAddParameters
 from common.application import ApplicationStatus, ApplicationAuthParameters
 from common.common import ResultMessage, CommandStatus
 from common.proxy import ProxyStatus, ProxyType, ProxyAddParameters, ProxyDeleteParameters
+from connection import connection
 from rpc import rpc
 
 log = logging.getLogger(__name__)
@@ -32,8 +33,9 @@ class Account:
 
 
 class Worker:
-    def __init__(self, ip: str, login: str, password: str, name: str, **kwargs):
+    def __init__(self, code: int, ip: str, login: str, password: str, name: str, **kwargs):
         self.name: str = name
+        self.code = code
         self.ip: str = ip
         self.login: str = login
         self.password: str = password
@@ -50,8 +52,8 @@ class Worker:
                      accounts: Dict[str, Dict],
                      proxies: Dict[str, Dict], **kwargs):
 
-        #await self.call_command('application.stop')
-        #await self.call_command('application.reset')
+        # await self.call_command('application.stop')
+        # await self.call_command('application.reset')
         await self.update_status()
 
         if self.status == ApplicationStatus.STOP:
@@ -72,7 +74,7 @@ class Worker:
         if self.status == ApplicationStatus.READY or self.status == ApplicationStatus.WORK:
             if self.login != login or self.password != password:
                 # выйти из аккаунта
-                return
+                pass
 
             diff = set(map(lambda x: x['ip'], proxies)) - set(self.proxies.keys())
 
@@ -161,14 +163,22 @@ class Worker:
     async def call_command(self, command: str, parameters: NamedTuple = None, timeout: int = 60) -> ResultMessage:
         log.info('Worker(%s) send command: %s', self.name, command)
 
+        await connection.session.post(f'http://212.109.195.39:8000/workers/{self.code}/logs/',
+                                      data={'log': f'Command {command}'})
+
         try:
             result = await asyncio.wait_for(rpc.call(self.ip, command, parameters), timeout=timeout)
 
             log.info('Worker(%s) recieved result command: %s', self.name, result.status)
+
+            await connection.session.post(f'http://212.109.195.39:8000/workers/{self.code}/logs/',
+                                          data={'log': f'Result {result.status.name}\n'})
+
 
             return result
 
         except asyncio.TimeoutError:
             self.status = ApplicationStatus.CLIENT_NOT_RESPONSE
             log.error('VBot(%s) not response', self.ip)
+            await connection.session.post(f'http://212.109.195.39:8000/workers/{self.code}/logs/', data={'log': 'Not response\n'})
             raise RuntimeError
